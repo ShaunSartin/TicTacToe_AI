@@ -52,11 +52,49 @@ void makeNewBoard(int pos, char val, char *board)
 	printf("\n");	
 }
 
+
+/*
+ * Function Purpose: Create a random number between values
+ * Parameters:
+ * 	max: The maximum acceptable value
+ * Returns: 
+ * 	A pseudo-random long between [0, max] which refers to the index of the 'possibleMoves' array
+ * Stolen-From: http://stackoverflow.com/questions/2509679/how-to-generate-a-random-number-from-within-a-range
+ */
+long random_at_most(long max) {
+  unsigned long
+    num_bins = (unsigned long) max + 1,
+    num_rand = (unsigned long) RAND_MAX + 1,
+    bin_size = num_rand / num_bins,
+    defect   = num_rand % num_bins;
+
+  long x;
+  do {
+   x = random();
+  }
+
+  while (num_rand - defect <= (unsigned long)x);
+
+  return x/bin_size;
+}
 int main()
 {
 
 	// user-inputted value specifying where to put their marker
 	int userMove;
+
+	// NOTE: may have an issue with this later 
+	int possibleMoves[9] = {-1,-1,-1,-1,-1,-1,-1,-1,-1};
+	int pmIndex = 0;
+	int chosenMove;
+
+	// Keep track of the moves used by the CPU
+	// This will be written/updated in the logfile
+	int strategyUsed[5] = {-1,-1,-1,-1,-1};
+	int suIndex = 0;
+
+	FILE *fp;
+
 
 	// Display initial message to user
 	printf("The board is set up as follows:\n");
@@ -81,7 +119,39 @@ int main()
 		{
 			printf("COMPUTER'S TURN: ");
 			
+			// Analyze the current board to see what moves are possible
+			for(i = 0; i < 9; i++)
+			{
+				if(currentBoard[i] == '-')
+				{
+					possibleMoves[pmIndex] = i;
+					//printf("%d", possibleMoves[pmIndex]);
+					pmIndex++;		
+					//printf("%d\t", pmIndex);
+				}	
+			}
+
+			fp = fopen("log.txt", "r");
+			if (fp == NULL)
+			{
+				// Random strategy
+				chosenMove = possibleMoves[random_at_most(pmIndex - 1)];
+				printf("%d", chosenMove);	
+			}
+				
+			// If a file with a positive victory count exists, choose the greatest one.
+			// Else, choose randomly
+
 			printf("\n");
+			makeNewBoard(chosenMove, 'x', currentBoard);
+
+			// Reset data regarding current state of the board, as it will no longer be valid	
+			for(i = 0; i <= pmIndex; i++)
+			{
+				possibleMoves[i] = -1;
+			}
+			pmIndex = 0;
+
 		}
 
 		// User turn
