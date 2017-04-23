@@ -80,10 +80,7 @@ int main()
 		if ((turnCounter % 2) == 0)
 		{
 			printf("COMPUTER'S TURN: ");
-			// CHOOSE POSITION
-			// PRINT POSITON ALONG WITH \n
-			// CALL makeNewBoard(pos, 'x', currentBoard);
-			// DELETE THIS LINE
+			
 			printf("\n");
 		}
 
@@ -96,19 +93,32 @@ int main()
 	
 			makeNewBoard(userMove, 'o', currentBoard);
 		}
-		if((((currentBoard[0] == currentBoard[1]) && (currentBoard[1] == currentBoard[2])) && (currentBoard[0] != '-')) 
-			|| ((currentBoard[3] == currentBoard[4]) && (currentBoard[4] == currentBoard[5])) && (currentBoard[4] != '-') 
-			|| ((currentBoard[6] == currentBoard[7]) && (currentBoard[7] == currentBoard[8])) && (currentBoard[6] != '-') 
-			|| ((currentBoard[0] == currentBoard[3]) && (currentBoard[3] == currentBoard[6])) && (currentBoard[0] != '-')
-			|| ((currentBoard[1] == currentBoard[4]) && (currentBoard[4] == currentBoard[7])) && (currentBoard[1] != '-')	
-			|| ((currentBoard[2] == currentBoard[5]) && (currentBoard[5] == currentBoard[8])) && (currentBoard[2] != '-')
-			|| ((currentBoard[0] == currentBoard[4]) && (currentBoard[4] == currentBoard[8])) && (currentBoard[0] != '-')
-			|| ((currentBoard[2] == currentBoard[4]) && (currentBoard[4] == currentBoard[6])) && (currentBoard[2] != '-'))
+		if((((currentBoard[0] == currentBoard[1]) && (currentBoard[1] == currentBoard[2])) && (currentBoard[0] == 'x')) 
+			|| ((currentBoard[3] == currentBoard[4]) && (currentBoard[4] == currentBoard[5])) && (currentBoard[4] == 'x') 
+			|| ((currentBoard[6] == currentBoard[7]) && (currentBoard[7] == currentBoard[8])) && (currentBoard[6] == 'x') 
+			|| ((currentBoard[0] == currentBoard[3]) && (currentBoard[3] == currentBoard[6])) && (currentBoard[0] == 'x')
+			|| ((currentBoard[1] == currentBoard[4]) && (currentBoard[4] == currentBoard[7])) && (currentBoard[1] == 'x')	
+			|| ((currentBoard[2] == currentBoard[5]) && (currentBoard[5] == currentBoard[8])) && (currentBoard[2] == 'x')
+			|| ((currentBoard[0] == currentBoard[4]) && (currentBoard[4] == currentBoard[8])) && (currentBoard[0] == 'x')
+			|| ((currentBoard[2] == currentBoard[4]) && (currentBoard[4] == currentBoard[6])) && (currentBoard[2] == 'x'))
 		{
+			printf("Computer Victory!\n");
 			break;
-		}	
+		}
+		else if((((currentBoard[0] == currentBoard[1]) && (currentBoard[1] == currentBoard[2])) && (currentBoard[0] == 'o')) 
+			|| ((currentBoard[3] == currentBoard[4]) && (currentBoard[4] == currentBoard[5])) && (currentBoard[4] == 'o') 
+			|| ((currentBoard[6] == currentBoard[7]) && (currentBoard[7] == currentBoard[8])) && (currentBoard[6] == 'o') 
+			|| ((currentBoard[0] == currentBoard[3]) && (currentBoard[3] == currentBoard[6])) && (currentBoard[0] == 'o')
+			|| ((currentBoard[1] == currentBoard[4]) && (currentBoard[4] == currentBoard[7])) && (currentBoard[1] == 'o')	
+			|| ((currentBoard[2] == currentBoard[5]) && (currentBoard[5] == currentBoard[8])) && (currentBoard[2] == 'o')
+			|| ((currentBoard[0] == currentBoard[4]) && (currentBoard[4] == currentBoard[8])) && (currentBoard[0] == 'o')
+			|| ((currentBoard[2] == currentBoard[4]) && (currentBoard[4] == currentBoard[6])) && (currentBoard[2] == 'o'))
+		{
+			printf("Player Victory!\n");
+			break;
+		}
+			
 	}
-	printf("GAME END!\n");
 	
 	return 0;
 }
