@@ -38,6 +38,9 @@ void makeNewBoard(int pos, char val, char *board)
 // NOTE: ADD DESCRIPTION
 int findBestStrategy(FILE *fp, int turnNum, int *possibleMoves, int len)
 {
+	
+	int tempCounter = 0;
+
 	// In the file, the first value on any line is the 'score' of the corresponding strategy
 	// This value will keep track of the highest value (assuming that it is greater than 0)
 	int bestScore = 0;
@@ -76,7 +79,7 @@ int findBestStrategy(FILE *fp, int turnNum, int *possibleMoves, int len)
 		fread(&convertMove, 1, 1, fp);
 		selectedMove = (((int) convertMove) - 48);
 
-		printf("SELECTED MOVE: %d\n", selectedMove);
+		//printf("SELECTED MOVE: %d\n", selectedMove);
 	
 		// Move back to the position before the last block of code was executed
 		fseek(fp, currPos, SEEK_SET);
@@ -133,8 +136,9 @@ int findBestStrategy(FILE *fp, int turnNum, int *possibleMoves, int len)
 }
 
 // NOTE: ADD DESCRIPTION
-void updateStrategy(FILE *fp, int *strategyUsed, int len, int increment)
+void updateStrategy(FILE *fp, int *strategyUsed, int len, int increment, int cpuWin, int cpuLose)
 {
+	// Debug: printf("UPDATE STRAT CALLED\n");
 	char strategyConv[len];
 	
 	char buffer[100];
@@ -153,57 +157,120 @@ void updateStrategy(FILE *fp, int *strategyUsed, int len, int increment)
 	{
 		strategyConv[i] = strategyUsed[i] + 48;
 	}
-
+	strategyConv[i] = '\0';
 
 	char newChar = '0';
-	while(newChar != EOF)
-	{
-		newChar = fgetc(fp);
-		fileOffset += 1;
 
-		if(newChar == '\n')
+	// Find the winning strategy in the file and increment its score
+	// or add it to the file if it doesn't exist yet.
+	if(cpuWin)
+	{
+		while(newChar != EOF)
 		{
-			//Begin searching through this line to see if strategy was used here
-			start = strstr(buffer, strategyConv);	
-			if(start != NULL)
+			newChar = fgetc(fp);
+			fileOffset += 1;
+
+			if(newChar == '\n')
 			{
-				//If the strategy was used, find the occurrence in the file and update it
-				// DEBUG: printf("start: %s\n", start);
-				break;
-			}			
+				//Begin searching through this line to see if strategy was used here
+				start = strstr(buffer, strategyConv);	
+				if(start != NULL)
+				{
+					//If the strategy was used, find the occurrence in the file and update it
+					//printf("start: %s\n", start);
+					break;
+				}			
+				
+				//printf("%s\n", strategyConv);
+				//printf("%s\n", buffer);
 
-			memset(buffer, 0, 100);
-			bIndex = 0;
-		}
-		else if(newChar != EOF)
+				memset(buffer, 0, 100);
+				bIndex = 0;
+			}
+			else if(newChar != EOF)
+			{
+		 		buffer[bIndex] = newChar;
+				bIndex++;
+			}
+		}	
+
+		// If an occurrence was found, update the corresponding strategy in the file
+		// Otherwise, append the new strategy
+		if (start != NULL)
 		{
-		 	buffer[bIndex] = newChar;
-			bIndex++;
+			// Move back to the 'score'
+			//printf("LEN: %d\n", len);
+			fileOffset -= (len + 3);
+			fseek(fp, fileOffset, SEEK_SET);
+
+			// Read the value, and increment/decrement it 
+			fread(&score, 1, 1, fp);
+			//printf("SCORE: %d\n", (((int) score) - 48));
+			fseek(fp, fileOffset, SEEK_SET);
+
+			// Increment the score for the strategy because it helped the CPU win.
+			fprintf(fp, "%d", (((int) score) - 48 + increment));
+		
 		}
-	}	
-
-	// If an occurrence was found, update the corresponding strategy in the file
-	// Otherwise, append the new strategy
-	if (start != NULL)
-	{
-		// NOTE: ERROR! If the player finishes the game earlier than the computer expects, it cant update its score properly.
-		// Move back to the 'score'
-		printf("LEN: %d\n", len);
-		fileOffset -= (len + 3);
-		fseek(fp, fileOffset, SEEK_SET);
-
-		// Read the value, and increment/decrement it 
-		fread(&score, 1, 1, fp);
-		printf("SCORE: %d\n", (((int) score) - 48));
-		fseek(fp, fileOffset, SEEK_SET);
-
-		// Increment
-		fprintf(fp, "%d", (((int) score) - 48 + increment));
+		else
+		{
+			//NOTE: APPEND STRATEGY 	
+		}
 	}
-	else
+
+	//Find the losing strategy, if it exists, and decrement it.
+	else if(cpuLose)
 	{
-		//NOTE: APPEND STRATEGY 	
-	}
+		int possibleMatch = 0;
+
+		while(newChar != EOF)
+		{
+			newChar = fgetc(fp);
+			fileOffset += 1;
+
+			// Make sure we see a tab before beginning to look for substring.
+			// Reason: That way we don't incorrectly modify data when a substring is found somewhere else
+			if(newChar == '\t')
+			{
+				newChar = fgetc(fp);
+				fileOffset += 1;
+				
+				// If the current char matches the 1st move, check the next one.
+				// Continue until there is a confirmed substring in the file that matches 'strategyConv'
+				while(newChar == strategyConv[possibleMatch])
+				{
+					// Check to see if the 'strategyConv' substring has been found.
+					// Note that 'len' is the length of the strategyUsed array (the '9' values are unaccounted for)
+					// Otherwise, grab the next character and check again
+					if(possibleMatch == (len - 2))
+					{
+						// Move the fp back to the score, and decrement it.
+						fseek(fp, fileOffset - len - 1, SEEK_SET);
+						fread(&score, 1, 1, fp);
+						fseek(fp, fileOffset - len - 1, SEEK_SET);
+						//DEBUG: printf("OLD SCORE: %d\n", (((int) score) - 48));
+						
+						if((((int) score) - 48) != 0)
+						{
+							//printf("IN IF_STATEMENT\n");	
+							fprintf(fp, "%d", (((int) score) - 48 - increment));
+						}	
+						fseek(fp, fileOffset, SEEK_SET);
+						break;
+					}
+					else
+					{	
+						newChar = fgetc(fp);
+						fileOffset += 1;
+						possibleMatch += 1;
+					}
+
+				}
+				possibleMatch = 0;
+			}		
+		}		
+	} 
+
 }
 
 /*
@@ -212,24 +279,18 @@ void updateStrategy(FILE *fp, int *strategyUsed, int len, int increment)
  * 	max: The maximum acceptable value
  * Returns: 
  * 	A pseudo-random long between [0, max] which refers to the index of the 'possibleMoves' array
- * Stolen-From: http://stackoverflow.com/questions/2509679/how-to-generate-a-random-number-from-within-a-range
+ * Stolen From: 
+ * 	https://stackoverflow.com/questions/1202687/how-do-i-get-a-specific-range-of-numbers-from-rand 
  */
-long random_at_most(long max) {
-  unsigned long
-    num_bins = (unsigned long) max + 1,
-    num_rand = (unsigned long) RAND_MAX + 1,
-    bin_size = num_rand / num_bins,
-    defect   = num_rand % num_bins;
+int random_at_most(int max) {
+	int min = 0;
+	int random_int = (min + rand() / (RAND_MAX / (max - min + 1) + 1));
 
-  long x;
-  do {
-   x = random();
-  }
+	//printf("RAND: %d\n", random_int);	
 
-  while (num_rand - defect <= (unsigned long)x);
-
-  return x/bin_size;
+	return random_int;
 }
+
 int main()
 {
 
@@ -256,7 +317,6 @@ int main()
 
 	// Used for the conversion from char to integer when reading from the logfile
 	char convert;
-
 
 	// Display initial message to user
 	printf("The board is set up as follows:\n");
@@ -298,6 +358,15 @@ int main()
 			// If the computer has no knowledge of which strategy to use, perform a random strategy
 			if (fp == NULL)
 			{
+
+				//Debug:
+				printf("\nPOSSIBLE MOVES:\n");
+				for(int j = 0; j < pmIndex; j++)
+				{
+					printf("%d", possibleMoves[j]);
+				}
+				printf("\n");
+
 				// Random strategy
 				chosenMove = possibleMoves[random_at_most(pmIndex - 1)];
 				strategyUsed[suIndex] = chosenMove;
@@ -393,7 +462,7 @@ int main()
 			{
 				fclose(fp);
 				fp = fopen("log.txt", "r+");
-				updateStrategy(fp, strategyUsed, 9, 1);	
+				updateStrategy(fp, strategyUsed, 9, 1, 1, 0);	
 				fclose(fp);
 			}
 
@@ -412,12 +481,12 @@ int main()
 		{
 			printf("Player Victory!\n");
 			
-			// If the logfile exists, attempt to find which strategy was used, and update it
+			// If the logfile exists, attempt to find which strategy was used. If it exists, update it.
 			if(fp != NULL)
 			{
 				fclose(fp);
 				fp = fopen("log.txt", "r+");
-				updateStrategy(fp, strategyUsed, suIndex, -1);
+				updateStrategy(fp, strategyUsed, suIndex, 1, 0, 1);
 				fclose(fp);
 			}
 			break;
